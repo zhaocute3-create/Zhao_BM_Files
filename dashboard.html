@@ -1,113 +1,37 @@
 <!DOCTYPE html>
 <html>
-<body style="background:#020617;color:white;text-align:center;font-family:sans-serif">
+<head>
+<title>Dashboard</title>
+<style>
+body { background:#0b1220; color:white; text-align:center; }
+button { padding:10px; margin:5px; border-radius:8px; }
+</style>
+</head>
+<body>
 
 <h2>Dashboard</h2>
 
 <p>UID: <span id="uid"></span></p>
-<p>Balance: <span id="bal"></span></p>
+<p>Balance: <span id="bal">0</span></p>
 
 <select id="game">
 <option>MLBB</option>
 <option>CODM</option>
 <option>Roblox</option>
-</select>
+</select><br>
 
-<br><br>
+<button onclick="generate()">🎮 Generate Account</button>
+<button onclick="showDeposit()">💳 Deposit</button>
 
-<button onclick="generate()">🎮 GENERATE ACCOUNT</button>
-
-<br><br>
-
-<button onclick="openDep()">💳 Deposit</button>
-
-<div id="box" style="display:none;background:#000c;position:fixed;width:100%;height:100%;top:0">
-
-<h3>Deposit</h3>
-<p>GCash: 09753048649</p>
-
-<input id="amount" placeholder="Amount"><br>
-<input id="ref"><br>
-<input type="file" id="file"><br>
-
-<button onclick="submitDep()">Submit</button>
-<button onclick="closeDep()">Cancel</button>
-
+<div id="depositBox" style="display:none;">
+  <input id="amount" placeholder="Amount"><br>
+  <input id="ref" placeholder="Reference"><br>
+  <input type="file" id="file"><br>
+  <button onclick="submitDeposit()">Submit</button>
 </div>
 
-<script type="module">
-import { auth, db, storage } from "./firebase.js";
-import {
- doc,onSnapshot,collection,query,where,getDocs,updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+<p id="msg"></p>
 
-import {
- ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
-let user, balance=0;
-
-auth.onAuthStateChanged(u=>{
-  user=u;
-
-  const r = doc(db,"users",u.uid);
-
-  onSnapshot(r,s=>{
-    uid.innerText = s.data().uidNumber;
-    balance = s.data().balance;
-    bal.innerText = balance;
-  });
-});
-
-window.generate = async ()=>{
-  const g = game.value;
-
-  const q = query(collection(db,"accounts"),
-    where("game","==",g),
-    where("status","==","available")
-  );
-
-  const s = await getDocs(q);
-
-  if(s.empty) return alert("No stock");
-
-  const acc = s.docs[0];
-
-  if(balance < acc.data().price){
-    return alert("Not enough balance");
-  }
-
-  alert("USER: "+acc.data().username+"\nPASS: "+acc.data().password);
-
-  await updateDoc(acc.ref,{status:"sold"});
-
-  const uref = doc(db,"users",user.uid);
-  await updateDoc(uref,{
-    balance: balance - acc.data().price
-  });
-};
-
-window.openDep=()=> box.style.display="block";
-window.closeDep=()=> box.style.display="none";
-
-window.submitDep=async()=>{
-  if(!file.files[0]) return alert("Upload receipt");
-
-  const sref = ref(storage,"receipts/"+Date.now());
-  await uploadBytes(sref,file.files[0]);
-  const url = await getDownloadURL(sref);
-
-  await addDoc(collection(db,"deposits"),{
-    user:user.uid,
-    amount:Number(amount.value),
-    ref:ref.value,
-    receipt:url,
-    status:"pending"
-  });
-
-  alert("Submitted");
-};
-</script>
-
+<script type="module" src="app.js"></script>
 </body>
 </html>
