@@ -2,9 +2,11 @@
 <html>
 <body style="background:#020617;color:white;text-align:center">
 
-<h2>LOGIN</h2>
+<h2>Login</h2>
+
 <input id="email"><br>
 <input id="pass" type="password"><br>
+
 <button onclick="login()">LOGIN</button>
 
 <a href="register.html">Register</a>
@@ -13,7 +15,7 @@
 import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-const ADMIN = "jhonlouiebaid92@gmail.com";
+const ADMIN = "YOUR_EMAIL@gmail.com";
 
 window.login = async ()=>{
   const res = await signInWithEmailAndPassword(auth,email.value,pass.value);
