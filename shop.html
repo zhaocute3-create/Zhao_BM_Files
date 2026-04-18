@@ -31,12 +31,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let currentUser;
+const bal = document.getElementById("bal");
 
 auth.onAuthStateChanged(async user=>{
   if(!user) location="index.html";
   currentUser = user;
 
-  // ✅ FIXED USER CREATE
   const ref = doc(db,"users",user.uid);
   const snap = await getDoc(ref);
 
@@ -47,15 +47,18 @@ auth.onAuthStateChanged(async user=>{
     });
   }
 
-  // LIVE BALANCE
+  // 🔥 LIVE BALANCE
   setInterval(async ()=>{
     const s = await getDoc(ref);
-    bal.innerText = s.data().balance || 0;
+    if (s.exists()) {
+      bal.innerText = s.data().balance || 0;
+    }
   },1000);
 });
 
-// ✅ USE KEY FIXED
+// 🔥 USE KEY (FULL FIXED)
 window.useKey = async function() {
+
   const keyVal = document.getElementById("keyInput").value.trim();
 
   if (!keyVal) {
@@ -69,13 +72,15 @@ window.useKey = async function() {
   }
 
   try {
-    const keysSnap = await getDocs(collection(db,"keys"));
+    // ⚠️ IMPORTANT: collection = "key"
+    const keysSnap = await getDocs(collection(db,"key"));
 
     let found = null;
 
     for (const d of keysSnap.docs) {
       let k = d.data();
-      if (k.key === keyVal) {
+
+      if (k.key && k.key.trim().toLowerCase() === keyVal.toLowerCase()) {
         found = { id: d.id, ...k };
         break;
       }
@@ -91,11 +96,17 @@ window.useKey = async function() {
 
     let currentBalance = userSnap.data().balance || 0;
 
+    let newBalance = currentBalance + (found.coins || 0);
+
     await updateDoc(userRef,{
-      balance: currentBalance + found.coins
+      balance: newBalance
     });
 
-    await deleteDoc(doc(db,"keys",found.id));
+    // delete key after use
+    await deleteDoc(doc(db,"key",found.id));
+
+    // update UI instantly
+    bal.innerText = newBalance;
 
     alert("Success! +" + found.coins + " coins 💰");
 
@@ -105,7 +116,7 @@ window.useKey = async function() {
   }
 };
 
-// ✅ GENERATE ACCOUNT
+// 🔥 GENERATE ACCOUNT
 window.generate = async ()=>{
   const userRef = doc(db,"users",currentUser.uid);
   const userSnap = await getDoc(userRef);
