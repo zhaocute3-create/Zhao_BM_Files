@@ -77,35 +77,48 @@ auth.onAuthStateChanged(async user=>{
 
 // 🔑 USE KEY SYSTEM
 window.useKey = async()=>{
-  let key = userKey.value.trim();
-  if(!key) return alert("Enter key!");
+  let keyVal = userKey.value.trim();
+
+  if(!keyVal) return alert("Enter key!");
 
   let keysSnap = await getDocs(collection(db,"keys"));
   let found = null;
 
-  keysSnap.forEach(docu=>{
-    let k = docu.data();
-    if(k.key === key){
-      found = {id:docu.id, ...k};
+  keysSnap.forEach(d=>{
+    let k = d.data();
+
+    // 🔥 EXACT MATCH FIX
+    if(k.key === keyVal){
+      found = {id:d.id, ...k};
     }
   });
 
-  if(!found) return alert("Invalid key!");
+  if(!found){
+    return alert("❌ Invalid or already used key!");
+  }
 
   let userRef = doc(db,"users",currentUser.uid);
   let uSnap = await getDoc(userRef);
 
-  let newBal = (uSnap.data().balance || 0) + found.coins;
+  if(!uSnap.exists()){
+    return alert("User data not found!");
+  }
 
+  let currentBal = uSnap.data().balance || 0;
+  let newBal = currentBal + (found.coins || 0);
+
+  // ✅ UPDATE BALANCE
   await updateDoc(userRef,{
     balance:newBal
   });
 
-  // DELETE USED KEY
+  // ✅ DELETE KEY (para di ma reuse)
   await deleteDoc(doc(db,"keys",found.id));
 
-  alert("Key used! +" + found.coins + " coins");
-  location.reload();
+  alert("✅ Key accepted! +" + found.coins + " coins");
+
+  balance.innerText = "💰 Balance: " + newBal;
+  userKey.value="";
 };
 
 // 🎮 GENERATE
