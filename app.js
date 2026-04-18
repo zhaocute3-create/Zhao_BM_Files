@@ -1,30 +1,65 @@
-import { getAuth, createUserWithEmailAndPassword } 
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { getFirestore, doc, setDoc } 
-from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
+  authDomain: "zhaobmfiles.firebaseapp.com",
+  projectId: "zhaobmfiles",
+  storageBucket: "zhaobmfiles.firebasestorage.app",
+  messagingSenderId: "898227903245",
+  appId: "1:898227903245:web:c21f3fa479b13c7971ae44"
+};
 
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+let msg = document.getElementById("msg");
+
+// ✅ REGISTER FIXED
 window.register = async () => {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
-
   try {
-    const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+    const res = await createUserWithEmailAndPassword(auth, email.value, pass.value);
 
-    const user = userCred.user;
+    const user = res.user;
 
-    // ✅ SAVE SA FIRESTORE
+    // UID system
+    const uidRef = doc(db, "meta", "counter");
+    const snap = await getDoc(uidRef);
+
+    let newUID = 1;
+
+    if (snap.exists()) {
+      newUID = snap.data().count + 1;
+    }
+
+    await setDoc(uidRef, { count: newUID });
+
+    // SAVE USER
     await setDoc(doc(db, "users", user.uid), {
       email: user.email,
-      balance: 0,
-      uidNum: Date.now() // pwede mo palitan later (1,2,3 system)
+      uidNum: newUID,
+      balance: 0
     });
 
-    alert("✅ Register success");
+    msg.innerText = "✅ Register Success!";
   } catch (e) {
-    alert("❌ " + e.message);
+    msg.innerText = "❌ " + e.message;
+  }
+};
+
+// ✅ LOGIN FIXED
+window.login = async () => {
+  try {
+    await signInWithEmailAndPassword(auth, email.value, pass.value);
+
+    msg.innerText = "✅ Login Success!";
+    setTimeout(() => {
+      location = "dashboard.html";
+    }, 1000);
+
+  } catch (e) {
+    msg.innerText = "❌ " + e.message;
   }
 };
