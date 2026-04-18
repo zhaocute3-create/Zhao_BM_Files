@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#020617;color:white;text-align:center">
+
+<h2>LOGIN</h2>
+
+<input id="email"><br>
+<input id="pass" type="password"><br>
+
+<button onclick="login()">LOGIN</button>
+
+<p><a href="register.html">Register</a></p>
+
+<script type="module">
+import { auth } from "./firebase.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const ADMIN="jhonlouiebaid92@gmail.com";
+
+window.login=()=>{
+ signInWithEmailAndPassword(auth,email.value,pass.value)
+ .then(res=>{
+  if(res.user.email===ADMIN){
+    location="admin.html";
+  }else{
+    location="dashboard.html";
+  }
+ });
+}
+</script>
+
+</body>
+</html>
