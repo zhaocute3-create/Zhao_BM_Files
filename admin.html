@@ -2,47 +2,86 @@
 <html>
 <body style="background:#020617;color:white;text-align:center">
 
-<h2>ADMIN</h2>
+<h2>ADMIN PANEL</h2>
 
-<input id="coins" placeholder="Coins">
-<button onclick="createKey()">CREATE KEY</button>
+<h3>Add Balance</h3>
+<input id="uidInput">
+<input id="amount">
+<button onclick="addBal()">ADD</button>
 
-<br><br>
-
-<input id="user" placeholder="Username">
-<input id="pass" placeholder="Password">
-<button onclick="addAcc()">ADD ACCOUNT</button>
+<h3>Deposits</h3>
+<div id="list"></div>
 
 <script type="module">
 import { db, auth } from "./firebase.js";
 import {
- collection,addDoc
+ collection,query,where,getDocs,
+ doc,updateDoc,onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const ADMIN="jhonlouiebaid92@gmail.com";
+const ADMIN="YOUR_EMAIL@gmail.com";
 
-auth.onAuthStateChanged(user=>{
-  if(!user || user.email!==ADMIN){
-    alert("Not admin");
-    location="index.html";
-  }
+auth.onAuthStateChanged(u=>{
+  if(!u || u.email !== ADMIN) location="index.html";
 });
 
-window.createKey=async()=>{
-  const key=Math.random().toString(36).substring(2,10);
-  await addDoc(collection(db,"key"),{
-    key:key,
-    coins:Number(coins.value)
+window.addBal=async()=>{
+  const q=query(collection(db,"users"),where("uidNumber","==",Number(uidInput.value)));
+  const s=await getDocs(q);
+
+  if(s.empty) return alert("No UID");
+
+  const d=s.docs[0];
+
+  await updateDoc(doc(db,"users",d.id),{
+    balance:d.data().balance+Number(amount.value)
   });
-  alert(key);
+
+  alert("Added");
 };
 
-window.addAcc=async()=>{
-  await addDoc(collection(db,"accounts"),{
-    username:user.value,
-    password:pass.value
+onSnapshot(collection(db,"deposits"),snap=>{
+  let html="";
+
+  snap.forEach(d=>{
+    const x=d.data();
+
+    html+=`
+    <div style="border:1px solid #00ffcc;margin:10px;padding:10px">
+      UID: ${x.user}<br>
+      ₱${x.amount}<br>
+      <img src="${x.receipt}" width="100"><br>
+      <button onclick="approve('${d.id}',${x.amount},'${x.user}')">Approve</button>
+      <button onclick="reject('${d.id}')">Reject</button>
+    </div>`;
   });
-  alert("Added");
+
+  list.innerHTML=html;
+});
+
+window.approve=async(id,amt,uid)=>{
+  const q=query(collection(db,"users"),where("uidNumber","==",Number(uid)));
+  const s=await getDocs(q);
+
+  const u=s.docs[0];
+
+  await updateDoc(doc(db,"users",u.id),{
+    balance:u.data().balance+amt
+  });
+
+  await updateDoc(doc(db,"deposits",id),{
+    status:"approved"
+  });
+
+  alert("Approved");
+};
+
+window.reject=async(id)=>{
+  await updateDoc(doc(db,"deposits",id),{
+    status:"rejected"
+  });
+
+  alert("Rejected");
 };
 </script>
 
