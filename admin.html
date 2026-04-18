@@ -1,174 +1,49 @@
 <!DOCTYPE html>
 <html>
-<body style="background:#020617;color:white;font-family:sans-serif">
+<body style="background:#020617;color:white;text-align:center">
 
-<h2>🔥 ADMIN PANEL</h2>
+<h2>ADMIN</h2>
 
-<h3>➕ ADD ACCOUNT</h3>
+<input id="coins" placeholder="Coins">
+<button onclick="createKey()">CREATE KEY</button>
 
-<input id="game" placeholder="MLBB/CODM/Roblox"><br>
-<input id="user" placeholder="Username"><br>
-<input id="pass" placeholder="Password"><br>
+<br><br>
 
-<button onclick="add()" style="
-background:#00ff88;
-padding:10px;
-border:none;
-border-radius:10px;
-box-shadow:0 0 10px #00ff88;
-margin-top:10px;
-">ADD ACCOUNT</button>
-
-<h3>📦 STOCK LIST</h3>
-<div id="stock"></div>
-
-<hr>
-
-<h3>🔑 GENERATE KEY (coins)</h3>
-<input id="coins" placeholder="Coins"><br>
-
-<button onclick="genKey()" style="
-background:#00ffcc;
-padding:10px;
-border:none;
-border-radius:10px;
-box-shadow:0 0 10px #00ffcc;
-margin-top:10px;
-">CREATE KEY</button>
-
-<hr>
-
-<h3>👥 USERS</h3>
-<div id="users"></div>
+<input id="user" placeholder="Username">
+<input id="pass" placeholder="Password">
+<button onclick="addAcc()">ADD ACCOUNT</button>
 
 <script type="module">
 import { db, auth } from "./firebase.js";
-
 import {
- collection, addDoc, onSnapshot, doc, deleteDoc
+ collection,addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
- onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const ADMIN="YOUR_EMAIL@gmail.com";
 
-const ADMIN="jhonlouiebaid92@gmail.com";
-
-// 🔐 ADMIN CHECK
-onAuthStateChanged(auth,u=>{
- if(!u || u.email!==ADMIN){
-  location="index.html";
- }
-});
-
-// ➕ ADD ACCOUNT
-window.add = async()=>{
- if(!game.value || !user.value || !pass.value){
-  return alert("Fill all fields!");
- }
-
- await addDoc(collection(db,"accounts"),{
-  game:game.value,
-  username:user.value,
-  password:pass.value,
-  status:"available"
- });
-
- alert("✅ Account Added!");
-
- game.value="";
- user.value="";
- pass.value="";
-};
-
-// 📦 VIEW STOCK
-onSnapshot(collection(db,"accounts"),snap=>{
- let html="";
-
- snap.forEach(d=>{
-  let s=d.data();
-
-  html+=`
-  <div style="
-  border:1px solid #00ff88;
-  margin:10px;
-  padding:10px;
-  border-radius:10px;
-  box-shadow:0 0 10px #00ff88;
-  ">
-    <b>${s.game}</b><br>
-    USER: ${s.username}<br>
-    PASS: ${s.password}<br>
-    STATUS: ${s.status}<br>
-
-    <button onclick="del('${d.id}')" style="
-    background:red;
-    padding:5px;
-    border:none;
-    border-radius:5px;
-    margin-top:5px;
-    ">DELETE</button>
-  </div>
-  `;
- });
-
- stock.innerHTML = html;
-});
-
-// 🗑 DELETE STOCK
-window.del = async(id)=>{
- await deleteDoc(doc(db,"accounts",id));
-};
-
-// 🔑 CREATE KEY
-window.createKey = async function(){
-
-  const coins = document.getElementById("coinsInput").value;
-
-  if(!coins){
-    alert("Enter coins muna");
-    return;
+auth.onAuthStateChanged(user=>{
+  if(!user || user.email!==ADMIN){
+    alert("Not admin");
+    location="index.html";
   }
+});
 
-  try{
-
-    const key = Math.random().toString(36).substring(2,10);
-
-    await addDoc(collection(db,"key"),{
-      key: key,
-      coins: Number(coins),
-      created: Date.now()
-    });
-
-    alert("KEY CREATED:\n" + key);
-
-    document.getElementById("coinsInput").value = "";
-
-  }catch(err){
-    console.error(err);
-    alert("Error creating key ❌");
-  }
+window.createKey=async()=>{
+  const key=Math.random().toString(36).substring(2,10);
+  await addDoc(collection(db,"key"),{
+    key:key,
+    coins:Number(coins.value)
+  });
+  alert(key);
 };
 
-// 👥 USERS LIST
-onSnapshot(collection(db,"users"),snap=>{
- let html="";
- snap.forEach(d=>{
-  let u=d.data();
-
-  html+=`
-  <div style="
-  border:1px solid #00ffcc;
-  margin:5px;
-  padding:5px;
-  border-radius:5px;
-  ">
-  ${u.email} | 💰 ${u.balance}
-  </div>`;
- });
-
- users.innerHTML=html;
-});
+window.addAcc=async()=>{
+  await addDoc(collection(db,"accounts"),{
+    username:user.value,
+    password:pass.value
+  });
+  alert("Added");
+};
 </script>
 
 </body>
