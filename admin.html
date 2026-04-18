@@ -121,18 +121,33 @@ window.del = async(id)=>{
 };
 
 // 🔑 CREATE KEY
-window.genKey = async()=>{
- if(!coins.value) return alert("Enter coins!");
+window.createKey = async function(){
 
- let key = Math.random().toString(36).substring(2,10);
+  const coins = document.getElementById("coinsInput").value;
 
- await addDoc(collection(db,"keys"),{
-  key:key,
-  coins:Number(coins.value)
- });
+  if(!coins){
+    alert("Enter coins muna");
+    return;
+  }
 
- alert("🔑 KEY: " + key);
- coins.value="";
+  try{
+
+    const key = Math.random().toString(36).substring(2,10);
+
+    await addDoc(collection(db,"key"),{
+      key: key,
+      coins: Number(coins),
+      created: Date.now()
+    });
+
+    alert("KEY CREATED:\n" + key);
+
+    document.getElementById("coinsInput").value = "";
+
+  }catch(err){
+    console.error(err);
+    alert("Error creating key ❌");
+  }
 };
 
 // 👥 USERS LIST
