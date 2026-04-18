@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#020617;color:white;text-align:center">
+
+<h2>🎮 GENERATOR</h2>
+
+<select id="game">
+  <option>MLBB</option>
+  <option>CODM</option>
+  <option>Roblox</option>
+</select>
+
+<br><br>
+<button onclick="generate()">GENERATE ACCOUNT</button>
+
+<div id="result"></div>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import {
+ collection,getDocs,doc,updateDoc,addDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+window.generate=async()=>{
+ let user=auth.currentUser;
+ let userRef=doc(db,"users",user.uid);
+ let userSnap=await getDocs(collection(db,"users"));
+ let gameName=game.value;
+
+ // GET USER BALANCE
+ let uSnap=await (await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"))
+ .getDoc(userRef);
+
+ let balance=uSnap.data().balance;
+
+ if(balance<=0) return alert("No balance!");
+
+ // GET ACCOUNT
+ let accSnap=await getDocs(collection(db,"accounts"));
+ let chosen=null;
+
+ accSnap.forEach(d=>{
+  let s=d.data();
+  if(s.game===gameName && s.status==="available" && !chosen){
+    chosen={id:d.id,...s};
+  }
+ });
+
+ if(!chosen) return alert("No stock!");
+
+ // DEDUCT BALANCE
+ await updateDoc(userRef,{
+  balance:balance-1
+ });
+
+ // MARK SOLD
+ await updateDoc(doc(db,"accounts",chosen.id),{
+  status:"sold"
+ });
+
+ // LOG
+ await addDoc(collection(db,"logs"),{
+  user:user.email,
+  game:gameName,
+  account:chosen.username,
+  time:Date.now()
+ });
+
+ result.innerHTML=`
+ <h3>${gameName}</h3>
+ USER:${chosen.username}<br>
+ PASS:${chosen.password}
+ `;
+};
+</script>
+
+</body>
+</html>
