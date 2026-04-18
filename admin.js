@@ -1,48 +1,38 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, getDocs, doc, updateDoc }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
-  authDomain: "zhaobmfiles.firebaseapp.com",
-  projectId: "zhaobmfiles",
-  storageBucket: "zhaobmfiles.firebasestorage.app",
-  messagingSenderId: "898227903245",
-  appId: "1:898227903245:web:c21f3fa479b13c7971ae44",
-  measurementId: "G-RQFGYGCEPC"
+  apiKey:"AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
+  projectId:"zhaobmfiles"
 };
 
-const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const db=getFirestore(app);
 
-window.addBal = async ()=>{
-  const uid = document.getElementById("uid").value;
-  const amount = parseInt(document.getElementById("amount").value);
+window.add=async()=>{
+  const uid=parseInt(document.getElementById("uid").value);
+  const amt=parseInt(document.getElementById("amount").value);
 
-  const q = await getDocs(collection(db,"users"));
+  const q=await getDocs(collection(db,"users"));
+
   q.forEach(async d=>{
-    if(d.data().uidNum == parseInt(uid)){
+    if(d.data().uidNum===uid){
       await updateDoc(doc(db,"users",d.id),{
-        balance: d.data().balance + amount
+        balance:d.data().balance+amt
       });
       alert("Added!");
     }
   });
-}
+};
 
 async function load(){
-  const q = await getDocs(collection(db,"deposits"));
-  let html="";
-
+  const q=await getDocs(collection(db,"deposits"));
+  let h="";
   q.forEach(d=>{
-    const data = d.data();
-    html += `
-      <div>
-        <p>${data.amount}</p>
-        <img src="${data.img}" width="100">
-      </div>
-    `;
+    const x=d.data();
+    h+=`<p>${x.amount}</p><img src="${x.receipt}" width="100">`;
   });
-
-  document.getElementById("list").innerHTML = html;
+  document.getElementById("list").innerHTML=h;
 }
-
 load();
