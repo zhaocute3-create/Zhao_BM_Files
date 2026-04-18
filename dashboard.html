@@ -1,78 +1,94 @@
 <!DOCTYPE html>
 <html>
-<body style="background:#020617;color:white;text-align:center">
+<body style="background:#020617;color:white;text-align:center;font-family:sans-serif">
 
-<h2>USER DASHBOARD</h2>
-<p>💰 Balance: <span id="bal">0</span></p>
+<h2>Dashboard</h2>
 
-<a href="shop.html" style="color:#00ffcc">GO SHOP</a><br><br>
+<div style="border:1px solid #00ffcc;padding:10px;border-radius:10px">
+<p>UID: <span id="uid"></span></p>
+<p>Balance: <span id="bal"></span></p>
+</div>
 
-<button onclick="openDeposit()">💳 DEPOSIT</button>
+<br>
 
-<!-- DEPOSIT BOX -->
-<div id="depBox" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#000c;padding-top:50px">
+<button onclick="openDep()" style="background:#00ffcc;padding:10px;border-radius:10px">💳 Deposit</button>
+
+<div id="box" style="display:none;position:fixed;top:0;width:100%;height:100%;background:#000c;padding-top:50px">
+
 <h3>GCash</h3>
 <p>09753048649</p>
-<p>L. B.</p>
 
-<input id="amount" placeholder="Amount"><br>
-<input id="ref" placeholder="Reference"><br>
-<input type="file"><br>
+<input id="amount" placeholder="Amount"><br><br>
+<input id="ref" placeholder="Reference"><br><br>
+<input type="file" id="file"><br><br>
 
 <p id="timer">10:00</p>
 
 <button onclick="submitDep()">Submit</button>
 <button onclick="closeDep()">Cancel</button>
+
 </div>
 
 <script type="module">
-import { auth, db } from "./firebase.js";
+import { auth, db, storage } from "./firebase.js";
 import {
-  doc,getDoc,setDoc,updateDoc,addDoc
+ doc,onSnapshot,addDoc,collection
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-let currentUser;
-const bal = document.getElementById("bal");
+import {
+ ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
-auth.onAuthStateChanged(async user=>{
-  if(!user) location="index.html";
-  currentUser = user;
+let user;
 
-  const ref = doc(db,"users",user.uid);
-  const snap = await getDoc(ref);
+auth.onAuthStateChanged(u=>{
+  user=u;
 
-  if(!snap.exists()){
-    await setDoc(ref,{balance:0});
-  }
+  const refDoc = doc(db,"users",u.uid);
 
-  setInterval(async ()=>{
-    const s = await getDoc(ref);
-    bal.innerText = s.data().balance || 0;
-  },1000);
+  onSnapshot(refDoc,s=>{
+    uid.innerText=s.data().uidNumber;
+    bal.innerText=s.data().balance;
+  });
 });
 
-// deposit UI
-let t;
-window.openDeposit=()=>{
-  document.getElementById("depBox").style.display="block";
-  let time=600;
+let t,time;
+
+window.openDep=()=>{
+  box.style.display="block";
+  time=600;
+
   t=setInterval(()=>{
     time--;
     let m=Math.floor(time/60);
     let s=time%60;
     timer.innerText=`${m}:${s<10?"0"+s:s}`;
-    if(time<=0){clearInterval(t);alert("Expired");closeDep();}
+    if(time<=0){clearInterval(t);closeDep();}
   },1000);
 };
-window.closeDep=()=>{depBox.style.display="none";clearInterval(t);};
+
+window.closeDep=()=>{
+  box.style.display="none";
+  clearInterval(t);
+};
 
 window.submitDep=async()=>{
+  const f=file.files[0];
+
+  const storageRef = ref(storage,"receipts/"+Date.now());
+  await uploadBytes(storageRef,f);
+
+  const url = await getDownloadURL(storageRef);
+
   await addDoc(collection(db,"deposits"),{
-    user:currentUser.email,
+    user:user.uid,
     amount:Number(amount.value),
     ref:ref.value,
-    status:"pending"
+    receipt:url,
+    status:"pending",
+    time:Date.now()
   });
+
   alert("Submitted");
   closeDep();
 };
