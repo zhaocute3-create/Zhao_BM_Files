@@ -1,19 +1,46 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Login</title>
+<title>Neo Wallet</title>
 <style>
-body { background:#0b1220; color:white; text-align:center; font-family:sans-serif; padding-top:50px;}
-.box { background:#111827; padding:25px; display:inline-block; border-radius:12px;}
-input,button { padding:12px; margin:8px; border-radius:8px; border:none;}
-button { background:#00ffcc; cursor:pointer;}
+body {
+  background: linear-gradient(135deg,#0b1220,#020617);
+  color:white;
+  font-family:sans-serif;
+  text-align:center;
+  padding-top:60px;
+}
+.card {
+  background:rgba(255,255,255,0.05);
+  backdrop-filter:blur(10px);
+  padding:25px;
+  border-radius:15px;
+  display:inline-block;
+  box-shadow:0 0 20px #00ffcc33;
+}
+input {
+  padding:12px;
+  margin:8px;
+  border-radius:10px;
+  border:none;
+  width:220px;
+}
+button {
+  padding:12px;
+  margin:8px;
+  border:none;
+  border-radius:10px;
+  background:#00ffcc;
+  font-weight:bold;
+  cursor:pointer;
+}
 #msg { margin-top:10px; font-weight:bold;}
 </style>
 </head>
 <body>
 
-<div class="box">
-<h2>Login / Register</h2>
+<div class="card">
+<h2>Neo Wallet</h2>
 
 <input id="email" placeholder="Email"><br>
 <input id="pass" type="password" placeholder="Password"><br>
