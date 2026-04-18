@@ -1,99 +1,24 @@
 <!DOCTYPE html>
 <html>
-<body style="background:#020617;color:white;text-align:center">
+<head>
+<title>Admin</title>
+<style>
+body { background:#0b1220; color:white; text-align:center; }
+input,button { padding:8px; margin:5px; }
+</style>
+</head>
+<body>
 
-<h2>ADMIN</h2>
-
-<h3>Add Account</h3>
-<input id="game">
-<input id="user">
-<input id="pass">
-<input id="price">
-<button onclick="addAcc()">Add</button>
+<h2>ADMIN PANEL</h2>
 
 <h3>Add Balance</h3>
-<input id="uid">
-<input id="balAdd">
+<input id="uid" placeholder="UID">
+<input id="amount" placeholder="Amount">
 <button onclick="addBal()">Add</button>
 
 <h3>Deposits</h3>
 <div id="list"></div>
 
-<script type="module">
-import { db, auth } from "./firebase.js";
-import {
- collection,addDoc,query,where,getDocs,
- doc,updateDoc,onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const ADMIN="jhonlouiebaid92@gmail.com";
-
-auth.onAuthStateChanged(u=>{
- if(!u || u.email!==ADMIN) location="index.html";
-});
-
-window.addAcc=async()=>{
-  await addDoc(collection(db,"accounts"),{
-    game:game.value,
-    username:user.value,
-    password:pass.value,
-    price:Number(price.value),
-    status:"available"
-  });
-  alert("Added");
-};
-
-window.addBal=async()=>{
-  const q=query(collection(db,"users"),
-    where("uidNumber","==",Number(uid.value)));
-
-  const s=await getDocs(q);
-
-  const d=s.docs[0];
-
-  await updateDoc(doc(db,"users",d.id),{
-    balance:d.data().balance+Number(balAdd.value)
-  });
-
-  alert("Done");
-};
-
-onSnapshot(collection(db,"deposits"),snap=>{
- let html="";
-
- snap.forEach(d=>{
-  const x=d.data();
-
-  html+=`
-  <div>
-    ${x.amount}<br>
-    <img src="${x.receipt}" width="100"><br>
-    <button onclick="approve('${d.id}',${x.amount},'${x.user}')">OK</button>
-  </div>`;
- });
-
- list.innerHTML=html;
-});
-
-window.approve=async(id,amt,uid)=>{
-  const q=query(collection(db,"users"),
-    where("uidNumber","==",Number(uid)));
-
-  const s=await getDocs(q);
-
-  const u=s.docs[0];
-
-  await updateDoc(doc(db,"users",u.id),{
-    balance:u.data().balance+amt
-  });
-
-  await updateDoc(doc(db,"deposits",id),{
-    status:"approved"
-  });
-
-  alert("Approved");
-};
-</script>
-
+<script type="module" src="admin.js"></script>
 </body>
 </html>
