@@ -1,38 +1,72 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc }
+import { getFirestore, collection, getDocs, doc, updateDoc, addDoc, deleteDoc }
 from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey:"AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
-  projectId:"zhaobmfiles"
-};
+const app = initializeApp({
+ apiKey:"AIzaSy...",
+ projectId:"zhaobmfiles"
+});
 
-const app = initializeApp(firebaseConfig);
 const db=getFirestore(app);
 
-window.add=async()=>{
-  const uid=parseInt(document.getElementById("uid").value);
-  const amt=parseInt(document.getElementById("amount").value);
+// LOAD DEPOSITS + STOCKS
+async function load(){
+ const dep=await getDocs(collection(db,"deposits"));
+ const stocks=await getDocs(collection(db,"stocks"));
 
-  const q=await getDocs(collection(db,"users"));
+ let html="<h3>Deposits</h3>";
 
-  q.forEach(async d=>{
-    if(d.data().uidNum===uid){
-      await updateDoc(doc(db,"users",d.id),{
-        balance:d.data().balance+amt
-      });
-      alert("Added!");
-    }
-  });
+ dep.forEach(d=>{
+  const x=d.data();
+  html+=`
+  <div>
+    <p>₱${x.amount}</p>
+    <img src="${x.receipt}" width="100"><br>
+    <button onclick="approve('${d.id}','${x.userId}',${x.amount})">Approve</button>
+    <button onclick="del('${d.id}')">Delete</button>
+  </div>`;
+ });
+
+ html+="<h3>Add Stock</h3>";
+ html+=`
+ <input id="game" placeholder="Game">
+ <input id="acc" placeholder="Account">
+ <button onclick="addStock()">Add</button>
+ `;
+
+ document.body.innerHTML=html;
+}
+
+window.approve = async(id,uid,amt)=>{
+ const userRef=doc(db,"users",uid);
+ const snap=await getDocs(collection(db,"users"));
+
+ snap.forEach(async d=>{
+  if(d.id===uid){
+    await updateDoc(userRef,{
+      balance:d.data().balance + amt
+    });
+  }
+ });
+
+ await deleteDoc(doc(db,"deposits",id));
+ alert("Approved!");
+ load();
 };
 
-async function load(){
-  const q=await getDocs(collection(db,"deposits"));
-  let h="";
-  q.forEach(d=>{
-    const x=d.data();
-    h+=`<p>${x.amount}</p><img src="${x.receipt}" width="100">`;
-  });
-  document.getElementById("list").innerHTML=h;
-}
+window.del = async(id)=>{
+ await deleteDoc(doc(db,"deposits",id));
+ load();
+};
+
+window.addStock = async()=>{
+ await addDoc(collection(db,"stocks"),{
+  game:game.value,
+  account:acc.value,
+  used:false
+ });
+ alert("Stock added");
+ load();
+};
+
 load();
