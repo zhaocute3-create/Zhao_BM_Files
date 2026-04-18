@@ -2,42 +2,97 @@
 <html>
 <head>
 <title>Dashboard</title>
+
 <style>
-body { background:#0b1220; color:white; text-align:center; }
-button { padding:10px; margin:5px; border-radius:8px; }
+body {
+  background:#0b1220;
+  color:white;
+  text-align:center;
+  font-family:sans-serif;
+}
+
+.card {
+  background:#111827;
+  padding:15px;
+  margin:10px;
+  border-radius:12px;
+  box-shadow:0 0 10px #00ffcc55;
+}
+
+button {
+  padding:10px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+  background:#00ffcc;
+  cursor:pointer;
+}
+
+input, select {
+  padding:10px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+}
+
+#depositBox {
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:#000c;
+  padding-top:50px;
+}
 </style>
+
 </head>
 <body>
 
 <h2>Dashboard</h2>
 
-<p>UID: <span id="uid">Loading...</span></p>
-<p>Balance: <span id="balance">0</span></p>
+<div class="card">
+  <p>UID: <span id="uid">Loading...</span></p>
+  <p>Balance: <span id="balance">0</span></p>
+</div>
 
-<select id="game">
-<option>MLBB</option>
-<option>CODM</option>
-<option>Roblox</option>
-</select><br>
+<div class="card">
+  <select id="game">
+    <option>MLBB</option>
+    <option>CODM</option>
+    <option>Roblox</option>
+  </select><br>
 
-<button onclick="generate()">🎮 Generate Account</button>
-<button onclick="showDeposit()">💳 Deposit</button>
+  <button onclick="generate()">🎮 Generate Account</button>
+</div>
 
-<div id="depositBox" style="display:none;">
-  <input id="amount" placeholder="Amount"><br>
-  <input id="ref" placeholder="Reference"><br>
-  <input type="file" id="file"><br>
-  <button onclick="submitDeposit()">Submit</button>
+<div class="card">
+  <button onclick="showDeposit()">💳 Deposit</button>
+</div>
+
+<div id="depositBox">
+  <div class="card">
+    <h3>Deposit</h3>
+
+    <input id="amount" placeholder="Amount"><br>
+    <input id="refInput" placeholder="Reference"><br>
+    <input type="file" id="file"><br>
+
+    <button onclick="submitDeposit()">Submit</button>
+    <button onclick="closeDeposit()">Cancel</button>
+  </div>
 </div>
 
 <p id="msg"></p>
 
-<script type="module" src="app.js"></script>
-  
+<!-- 🔥 ONLY ONE SCRIPT -->
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
@@ -51,8 +106,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-// 🔥 AUTO LOAD USER DATA
+let currentUser;
+
+// ✅ LOAD USER
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     alert("Login muna!");
@@ -60,19 +118,62 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
-  const ref = doc(db, "users", user.uid);
-  const snap = await getDoc(ref);
+  currentUser = user;
+
+  const refDoc = doc(db, "users", user.uid);
+  const snap = await getDoc(refDoc);
 
   if (snap.exists()) {
     const data = snap.data();
 
-    document.getElementById("uid").innerText = data.uidNum || "N/A";
-    document.getElementById("balance").innerText = data.balance || 0;
-  } else {
-    document.getElementById("uid").innerText = "No Data";
-    document.getElementById("balance").innerText = "0";
+    uid.innerText = data.uidNum || "N/A";
+    balance.innerText = data.balance || 0;
   }
 });
+
+// 🎮 GENERATE (basic)
+window.generate = () => {
+  alert("Generate coming soon (next step)");
+};
+
+// 💳 DEPOSIT UI
+window.showDeposit = () => {
+  depositBox.style.display = "block";
+};
+
+window.closeDeposit = () => {
+  depositBox.style.display = "none";
+};
+
+// 💰 SUBMIT DEPOSIT (FIXED)
+window.submitDeposit = async () => {
+
+  if (!file.files[0]) {
+    msg.innerText = "Upload receipt first!";
+    return;
+  }
+
+  msg.innerText = "Submitting...";
+
+  const storageRef = ref(storage, "receipts/" + Date.now());
+  await uploadBytes(storageRef, file.files[0]);
+
+  const url = await getDownloadURL(storageRef);
+
+  await addDoc(collection(db, "deposits"), {
+    userId: currentUser.uid,
+    amount: Number(amount.value),
+    reference: refInput.value,
+    receipt: url,
+    status: "pending",
+    time: Date.now()
+  });
+
+  msg.innerText = "✅ Submitted!";
+  depositBox.style.display = "none";
+};
+
 </script>
+
 </body>
 </html>
