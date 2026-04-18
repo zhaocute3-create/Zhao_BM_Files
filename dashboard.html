@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#020617;color:white;text-align:center">
+
+<h2>USER DASHBOARD</h2>
+<a href="shop.html">GO GENERATE</a>
+
+<h3>💰 Balance: <span id="bal">0</span></h3>
+
+<div id="logs"></div>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import {
+ doc,onSnapshot,collection,query,where
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+auth.onAuthStateChanged(user=>{
+ if(!user) location="index.html";
+
+ // BALANCE
+ onSnapshot(doc(db,"users",user.uid),snap=>{
+  bal.innerText = snap.data().balance || 0;
+ });
+
+ // HISTORY
+ const q=query(collection(db,"logs"),where("user","==",user.email));
+
+ onSnapshot(q,snap=>{
+  let html="";
+  snap.forEach(d=>{
+   let l=d.data();
+   html+=`
+   <div>
+   ${l.game} | ${l.account} | ${new Date(l.time).toLocaleString()}
+   </div><hr>`;
+  });
+  logs.innerHTML=html;
+ });
+});
+</script>
+
+</body>
+</html>
