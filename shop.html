@@ -2,164 +2,63 @@
 <html>
 <body style="background:#020617;color:white;text-align:center">
 
-<h1>🎮 GENERATOR</h1>
+<h2>SHOP</h2>
 
-<select id="game">
-  <option>MLBB</option>
-  <option>CODM</option>
-  <option>ROBLOX</option>
-</select>
+<input id="keyInput" placeholder="Enter key">
+<button onclick="useKey()">USE KEY</button>
 
-<br><br>
+<p>Balance: <span id="bal">0</span></p>
 
-<input id="keyInput" placeholder="Enter Key"><br><br>
+<button onclick="generate()">GENERATE</button>
 
-<button onclick="useKey()">USE KEY</button><br><br>
-<button onclick="generate()">GENERATE ACCOUNT</button>
-
-<h3>💰 Balance: <span id="bal">0</span></h3>
-
-<div id="result"></div>
+<div id="res"></div>
 
 <script type="module">
-import { db, auth } from "./firebase.js";
-
+import { auth, db } from "./firebase.js";
 import {
- doc, getDoc, setDoc, updateDoc,
- collection, getDocs, deleteDoc,
- addDoc
+ doc,getDoc,updateDoc,getDocs,collection,deleteDoc,addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 let currentUser;
-const bal = document.getElementById("bal");
 
-auth.onAuthStateChanged(async user=>{
-  if(!user) location="index.html";
-  currentUser = user;
-
-  const ref = doc(db,"users",user.uid);
-  const snap = await getDoc(ref);
-
-  if(!snap.exists()){
-    await setDoc(ref,{
-      email:user.email,
-      balance:0
-    });
-  }
-
-  // 🔥 LIVE BALANCE
-  setInterval(async ()=>{
-    const s = await getDoc(ref);
-    if (s.exists()) {
-      bal.innerText = s.data().balance || 0;
-    }
-  },1000);
+auth.onAuthStateChanged(user=>{
+  currentUser=user;
 });
 
-// 🔥 USE KEY (FULL FIXED)
-window.useKey = async function() {
+// USE KEY
+window.useKey=async()=>{
+  const key=keyInput.value.trim();
+  const snap=await getDocs(collection(db,"key"));
 
-  const keyVal = document.getElementById("keyInput").value.trim();
+  let found=null;
+  snap.forEach(d=>{
+    if(d.data().key===key) found={id:d.id,...d.data()};
+  });
 
-  if (!keyVal) {
-    alert("Enter key muna");
-    return;
-  }
+  if(!found) return alert("Invalid");
 
-  if (!currentUser) {
-    alert("Login muna");
-    return;
-  }
+  const ref=doc(db,"users",currentUser.uid);
+  const s=await getDoc(ref);
+  let bal=s.data().balance||0;
 
-  try {
-    // ⚠️ IMPORTANT: collection = "key"
-    const keysSnap = await getDocs(collection(db,"key"));
+  await updateDoc(ref,{balance:bal+found.coins});
+  await deleteDoc(doc(db,"key",found.id));
 
-    let found = null;
-
-    for (const d of keysSnap.docs) {
-      let k = d.data();
-
-      if (k.key && k.key.trim().toLowerCase() === keyVal.toLowerCase()) {
-        found = { id: d.id, ...k };
-        break;
-      }
-    }
-
-    if (!found) {
-      alert("Invalid key ❌");
-      return;
-    }
-
-    const userRef = doc(db,"users",currentUser.uid);
-    const userSnap = await getDoc(userRef);
-
-    let currentBalance = userSnap.data().balance || 0;
-
-    let newBalance = currentBalance + (found.coins || 0);
-
-    await updateDoc(userRef,{
-      balance: newBalance
-    });
-
-    // delete key after use
-    await deleteDoc(doc(db,"key",found.id));
-
-    // update UI instantly
-    bal.innerText = newBalance;
-
-    alert("Success! +" + found.coins + " coins 💰");
-
-  } catch (err) {
-    console.error(err);
-    alert("Error sa key ❌");
-  }
+  alert("Added coins");
 };
 
-// 🔥 GENERATE ACCOUNT
-window.generate = async ()=>{
-  const userRef = doc(db,"users",currentUser.uid);
-  const userSnap = await getDoc(userRef);
+// GENERATE
+window.generate=async()=>{
+  const snap=await getDocs(collection(db,"accounts"));
+  let acc=null;
 
-  let balance = userSnap.data().balance || 0;
+  snap.forEach(d=>{if(!acc) acc={id:d.id,...d.data()};});
 
-  if(balance <= 0){
-    alert("No balance!");
-    return;
-  }
+  if(!acc) return alert("No stock");
 
-  const gameVal = game.value;
+  await deleteDoc(doc(db,"accounts",acc.id));
 
-  const accSnap = await getDocs(collection(db,"accounts"));
-
-  let selected=null;
-
-  accSnap.forEach(d=>{
-    let a=d.data();
-    if(a.game===gameVal && !selected){
-      selected={id:d.id,...a};
-    }
-  });
-
-  if(!selected) return alert("No stock!");
-
-  await updateDoc(userRef,{
-    balance: balance - 1
-  });
-
-  await deleteDoc(doc(db,"accounts",selected.id));
-
-  await addDoc(collection(db,"logs"),{
-    user:currentUser.email,
-    game:selected.game,
-    account:selected.username+" | "+selected.password,
-    time:Date.now()
-  });
-
-  result.innerHTML = `
-  <h3>ACCOUNT:</h3>
-  ${selected.username} | ${selected.password}
-  `;
+  res.innerHTML=`${acc.username} | ${acc.password}`;
 };
 </script>
 
