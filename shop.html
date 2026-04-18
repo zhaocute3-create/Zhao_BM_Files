@@ -1,49 +1,23 @@
 <!DOCTYPE html>
 <html>
-<body style="background:#020617;color:white;text-align:center;font-family:sans-serif">
+<body style="background:#020617;color:white;text-align:center">
 
-<h2>🎮 GENERATOR</h2>
+<h1>🎮 GENERATOR</h1>
 
 <select id="game">
   <option>MLBB</option>
   <option>CODM</option>
-  <option>Roblox</option>
+  <option>ROBLOX</option>
 </select>
 
 <br><br>
 
-<!-- 🔑 KEY INPUT -->
-<input id="userKey" placeholder="Enter Key" style="
-padding:10px;
-border-radius:10px;
-border:none;
-margin-bottom:10px;
-"><br>
+<input id="keyInput" placeholder="Enter Key"><br><br>
 
-<button onclick="useKey()" style="
-background:#00ffcc;
-padding:10px 20px;
-border:none;
-border-radius:10px;
-box-shadow:0 0 10px #00ffcc;
-margin-bottom:15px;
-">
-USE KEY
-</button>
+<button onclick="useKey()">USE KEY</button><br><br>
+<button onclick="generate()">GENERATE ACCOUNT</button>
 
-<br>
-
-<button onclick="generate()" style="
-background:#00ff88;
-padding:10px 20px;
-border:none;
-border-radius:10px;
-box-shadow:0 0 10px #00ff88;
-">
-GENERATE ACCOUNT
-</button>
-
-<h3 id="balance">💰 Balance: 0</h3>
+<h3>💰 Balance: <span id="bal">0</span></h3>
 
 <div id="result"></div>
 
@@ -51,134 +25,113 @@ GENERATE ACCOUNT
 import { db, auth } from "./firebase.js";
 
 import {
- collection, getDocs, doc, updateDoc, addDoc, getDoc, deleteDoc
+ doc, getDoc, setDoc, updateDoc,
+ collection, getDocs, deleteDoc,
+ addDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-let currentUser = null;
+let currentUser;
 
 auth.onAuthStateChanged(async user=>{
-  if(!user) return location="index.html";
+  if(!user) location="index.html";
   currentUser = user;
 
-  // LOAD BALANCE
-  let uRef = doc(db,"users",user.uid);
-  let snap = await getDoc(uRef);
+  // ✅ FIXED USER CREATE
+  const ref = doc(db,"users",user.uid);
+  const snap = await getDoc(ref);
 
   if(!snap.exists()){
-    await addDoc(collection(db,"users"),{
-      uid:user.uid,
+    await setDoc(ref,{
       email:user.email,
       balance:0
     });
-  } else {
-    balance.innerText = "💰 Balance: " + snap.data().balance;
   }
+
+  // LIVE BALANCE
+  setInterval(async ()=>{
+    const s = await getDoc(ref);
+    bal.innerText = s.data().balance || 0;
+  },1000);
 });
 
-// 🔑 USE KEY SYSTEM
-window.useKey = async()=>{
-  let keyVal = userKey.value.trim();
+// ✅ USE KEY FIXED
+window.useKey = async ()=>{
+  let keyVal = keyInput.value.trim();
 
-  if(!keyVal) return alert("Enter key!");
+  if(!keyVal) return alert("Enter key");
 
-  let keysSnap = await getDocs(collection(db,"keys"));
-  let found = null;
+  const keysSnap = await getDocs(collection(db,"keys"));
 
-  keysSnap.forEach(d=>{
+  let found=null;
+
+  for (const d of keysSnap.docs) {
     let k = d.data();
-
-    // 🔥 EXACT MATCH FIX
     if(k.key === keyVal){
       found = {id:d.id, ...k};
+      break;
     }
-  });
-
-  if(!found){
-    return alert("❌ Invalid or already used key!");
   }
 
-  let userRef = doc(db,"users",currentUser.uid);
-  let uSnap = await getDoc(userRef);
+  if(!found) return alert("Invalid key");
 
-  if(!uSnap.exists()){
-    return alert("User data not found!");
-  }
+  const userRef = doc(db,"users",currentUser.uid);
+  const userSnap = await getDoc(userRef);
 
-  let currentBal = uSnap.data().balance || 0;
-  let newBal = currentBal + (found.coins || 0);
+  let balNow = userSnap.data().balance || 0;
 
-  // ✅ UPDATE BALANCE
   await updateDoc(userRef,{
-    balance:newBal
+    balance: balNow + found.coins
   });
 
-  // ✅ DELETE KEY (para di ma reuse)
   await deleteDoc(doc(db,"keys",found.id));
 
-  alert("✅ Key accepted! +" + found.coins + " coins");
-
-  balance.innerText = "💰 Balance: " + newBal;
-  userKey.value="";
+  alert("Coins added!");
 };
 
-// 🎮 GENERATE
-window.generate = async()=>{
-  let user = currentUser;
-  if(!user) return alert("Login muna");
+// ✅ GENERATE ACCOUNT
+window.generate = async ()=>{
+  const userRef = doc(db,"users",currentUser.uid);
+  const userSnap = await getDoc(userRef);
 
-  let userRef = doc(db,"users",user.uid);
-  let uSnap = await getDoc(userRef);
+  let balance = userSnap.data().balance || 0;
 
-  let balanceVal = uSnap.data().balance || 0;
+  if(balance <= 0){
+    alert("No balance!");
+    return;
+  }
 
-  if(balanceVal <= 0) return alert("No balance!");
+  const gameVal = game.value;
 
-  let gameName = game.value;
+  const accSnap = await getDocs(collection(db,"accounts"));
 
-  let accSnap = await getDocs(collection(db,"accounts"));
-  let chosen = null;
+  let selected=null;
 
   accSnap.forEach(d=>{
-    let s = d.data();
-    if(s.game===gameName && s.status==="available" && !chosen){
-      chosen = {id:d.id, ...s};
+    let a=d.data();
+    if(a.game===gameVal && !selected){
+      selected={id:d.id,...a};
     }
   });
 
-  if(!chosen) return alert("No stock!");
+  if(!selected) return alert("No stock!");
 
-  // DEDUCT BALANCE
   await updateDoc(userRef,{
-    balance:balanceVal - 1
+    balance: balance - 1
   });
 
-  // MARK SOLD
-  await updateDoc(doc(db,"accounts",chosen.id),{
-    status:"sold"
-  });
+  await deleteDoc(doc(db,"accounts",selected.id));
 
-  // LOG
   await addDoc(collection(db,"logs"),{
-    user:user.email,
-    game:gameName,
-    account:chosen.username,
+    user:currentUser.email,
+    game:selected.game,
+    account:selected.username+" | "+selected.password,
     time:Date.now()
   });
 
-  balance.innerText = "💰 Balance: " + (balanceVal - 1);
-
   result.innerHTML = `
-  <div style="
-  border:1px solid #00ff88;
-  padding:15px;
-  margin:15px;
-  border-radius:10px;
-  box-shadow:0 0 10px #00ff88;
-  ">
-    <h3>${gameName}</h3>
-    USER: ${chosen.username}<br>
-    PASS: ${chosen.password}
-  </div>`;
+  <h3>ACCOUNT:</h3>
+  ${selected.username} | ${selected.password}
+  `;
 };
 </script>
 
