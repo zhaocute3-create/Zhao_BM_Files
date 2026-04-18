@@ -1,72 +1,157 @@
 <!DOCTYPE html>
 <html>
-<body style="background:#020617;color:white">
+<body style="background:#020617;color:white;font-family:sans-serif">
 
-<h2>ADMIN PANEL</h2>
+<h2>🔥 ADMIN PANEL</h2>
 
 <h3>➕ ADD ACCOUNT</h3>
-<input id="game" placeholder="MLBB/CODM/Roblox"><br>
-<input id="user"><br>
-<input id="pass"><br>
 
-<button onclick="add()">ADD</button>
+<input id="game" placeholder="MLBB/CODM/Roblox"><br>
+<input id="user" placeholder="Username"><br>
+<input id="pass" placeholder="Password"><br>
+
+<button onclick="add()" style="
+background:#00ff88;
+padding:10px;
+border:none;
+border-radius:10px;
+box-shadow:0 0 10px #00ff88;
+margin-top:10px;
+">ADD ACCOUNT</button>
+
+<h3>📦 STOCK LIST</h3>
+<div id="stock"></div>
+
+<hr>
 
 <h3>🔑 GENERATE KEY (coins)</h3>
 <input id="coins" placeholder="Coins"><br>
-<button onclick="genKey()">CREATE KEY</button>
 
-<h3>👤 USERS</h3>
+<button onclick="genKey()" style="
+background:#00ffcc;
+padding:10px;
+border:none;
+border-radius:10px;
+box-shadow:0 0 10px #00ffcc;
+margin-top:10px;
+">CREATE KEY</button>
+
+<hr>
+
+<h3>👥 USERS</h3>
 <div id="users"></div>
 
 <script type="module">
 import { db, auth } from "./firebase.js";
+
 import {
- collection,addDoc,onSnapshot,doc,updateDoc
+ collection, addDoc, onSnapshot, doc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+ onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const ADMIN="jhonlouiebaid92@gmail.com";
 
+// 🔐 ADMIN CHECK
 onAuthStateChanged(auth,u=>{
  if(!u || u.email!==ADMIN){
   location="index.html";
  }
 });
 
-// ADD ACCOUNT
-window.add=async()=>{
+// ➕ ADD ACCOUNT
+window.add = async()=>{
+ if(!game.value || !user.value || !pass.value){
+  return alert("Fill all fields!");
+ }
+
  await addDoc(collection(db,"accounts"),{
   game:game.value,
   username:user.value,
   password:pass.value,
   status:"available"
  });
+
+ alert("✅ Account Added!");
+
+ game.value="";
+ user.value="";
+ pass.value="";
 };
 
-// CREATE KEY
-window.genKey=async()=>{
- let key=Math.random().toString(36).substring(2,10);
+// 📦 VIEW STOCK
+onSnapshot(collection(db,"accounts"),snap=>{
+ let html="";
+
+ snap.forEach(d=>{
+  let s=d.data();
+
+  html+=`
+  <div style="
+  border:1px solid #00ff88;
+  margin:10px;
+  padding:10px;
+  border-radius:10px;
+  box-shadow:0 0 10px #00ff88;
+  ">
+    <b>${s.game}</b><br>
+    USER: ${s.username}<br>
+    PASS: ${s.password}<br>
+    STATUS: ${s.status}<br>
+
+    <button onclick="del('${d.id}')" style="
+    background:red;
+    padding:5px;
+    border:none;
+    border-radius:5px;
+    margin-top:5px;
+    ">DELETE</button>
+  </div>
+  `;
+ });
+
+ stock.innerHTML = html;
+});
+
+// 🗑 DELETE STOCK
+window.del = async(id)=>{
+ await deleteDoc(doc(db,"accounts",id));
+};
+
+// 🔑 CREATE KEY
+window.genKey = async()=>{
+ if(!coins.value) return alert("Enter coins!");
+
+ let key = Math.random().toString(36).substring(2,10);
 
  await addDoc(collection(db,"keys"),{
   key:key,
-  coins:Number(coins.value),
-  used:false
+  coins:Number(coins.value)
  });
 
- alert("KEY: "+key);
+ alert("🔑 KEY: " + key);
+ coins.value="";
 };
 
-// VIEW USERS
+// 👥 USERS LIST
 onSnapshot(collection(db,"users"),snap=>{
  let html="";
  snap.forEach(d=>{
   let u=d.data();
+
   html+=`
-  <div>
+  <div style="
+  border:1px solid #00ffcc;
+  margin:5px;
+  padding:5px;
+  border-radius:5px;
+  ">
   ${u.email} | 💰 ${u.balance}
   </div>`;
  });
+
  users.innerHTML=html;
 });
 </script>
