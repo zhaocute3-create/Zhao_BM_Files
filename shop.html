@@ -55,37 +55,58 @@ auth.onAuthStateChanged(async user=>{
 });
 
 // ✅ USE KEY FIXED
-window.useKey = async ()=>{
-  let keyVal = keyInput.value.trim();
+window.useKey = async function() {
+  const keyInput = document.getElementById("keyInput").value.trim();
 
-  if(!keyVal) return alert("Enter key");
-
-  const keysSnap = await getDocs(collection(db,"keys"));
-
-  let found=null;
-
-  for (const d of keysSnap.docs) {
-    let k = d.data();
-    if(k.key === keyVal){
-      found = {id:d.id, ...k};
-      break;
-    }
+  if (!keyInput) {
+    alert("Enter key muna");
+    return;
   }
 
-  if(!found) return alert("Invalid key");
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    alert("Login muna");
+    return;
+  }
 
-  const userRef = doc(db,"users",currentUser.uid);
-  const userSnap = await getDoc(userRef);
+  try {
+    const snapshot = await db.collection("keys")
+      .where("key", "==", keyInput)
+      .get();
 
-  let balNow = userSnap.data().balance || 0;
+    if (snapshot.empty) {
+      alert("Invalid key ❌");
+      return;
+    }
 
-  await updateDoc(userRef,{
-    balance: balNow + found.coins
-  });
+    let doc = snapshot.docs[0];
+    let data = doc.data();
 
-  await deleteDoc(doc(db,"keys",found.id));
+    const coins = data.coins || 0;
 
-  alert("Coins added!");
+    const userRef = db.collection("users").doc(user.uid);
+    const userDoc = await userRef.get();
+
+    let currentBalance = 0;
+    if (userDoc.exists) {
+      currentBalance = userDoc.data().balance || 0;
+    }
+
+    await userRef.set({
+      balance: currentBalance + coins,
+      email: user.email
+    }, { merge: true });
+
+    await db.collection("keys").doc(doc.id).delete();
+
+    alert("Success! +" + coins + " coins 💰");
+
+    document.getElementById("balance").innerText = currentBalance + coins;
+
+  } catch (error) {
+    console.error(error);
+    alert("Error sa key ❌");
+  }
 };
 
 // ✅ GENERATE ACCOUNT
