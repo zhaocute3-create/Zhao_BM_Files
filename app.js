@@ -18,11 +18,14 @@ const db = getFirestore(app);
 let msg = document.getElementById("msg");
 
 // ✅ REGISTER FIXED
-window.register = async () => {
-  try {
-    const res = await createUserWithEmailAndPassword(auth, email.value, pass.value);
+try {
+  const res = await createUserWithEmailAndPassword(auth, email.value, pass.value);
 
-    const user = res.user;
+  showMsg("✅ Register Success!", "success");
+
+} catch (e) {
+  showMsg("❌ " + e.message, "error");
+}
 
     // UID system
     const uidRef = doc(db, "meta", "counter");
@@ -52,14 +55,15 @@ window.register = async () => {
 // ✅ LOGIN FIXED
 window.login = async () => {
   try {
-    await signInWithEmailAndPassword(auth, email.value, pass.value);
+  await signInWithEmailAndPassword(auth, email.value, pass.value);
 
-    msg.innerText = "✅ Login Success!";
-    setTimeout(() => {
-      location = "dashboard.html";
-    }, 1000);
+  showMsg("✅ Login Success!", "success");
 
-  } catch (e) {
-    msg.innerText = "❌ " + e.message;
+  setTimeout(() => {
+    location = "dashboard.html";
+  }, 1000);
+
+} catch (e) {
+  showMsg("❌ " + e.message, "error");
   }
 };
