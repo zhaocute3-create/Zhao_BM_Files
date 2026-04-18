@@ -2,9 +2,10 @@
 <html>
 <body style="background:#020617;color:white;text-align:center">
 
-<h2>REGISTER</h2>
-<input id="email"><br>
-<input id="pass" type="password"><br>
+<h2>Register</h2>
+
+<input id="email" placeholder="Email"><br>
+<input id="pass" type="password" placeholder="Password"><br>
 <button onclick="reg()">REGISTER</button>
 
 <script type="module">
@@ -36,8 +37,7 @@ window.reg = async ()=>{
 
   await setDoc(doc(db,"users",res.user.uid),{
     uidNumber: uid,
-    balance: 0,
-    created: Date.now()
+    balance: 0
   });
 
   alert("Your UID: "+uid);
