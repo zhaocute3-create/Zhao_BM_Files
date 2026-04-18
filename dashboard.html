@@ -2,178 +2,93 @@
 <html>
 <head>
 <title>Dashboard</title>
-
 <style>
-body {
-  background:#0b1220;
-  color:white;
-  text-align:center;
-  font-family:sans-serif;
-}
-
-.card {
-  background:#111827;
-  padding:15px;
-  margin:10px;
-  border-radius:12px;
-  box-shadow:0 0 10px #00ffcc55;
-}
-
-button {
-  padding:10px;
-  margin:5px;
-  border-radius:8px;
-  border:none;
-  background:#00ffcc;
-  cursor:pointer;
-}
-
-input, select {
-  padding:10px;
-  margin:5px;
-  border-radius:8px;
-  border:none;
-}
-
-#depositBox {
-  display:none;
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#000c;
-  padding-top:50px;
-}
+body{background:#0b1220;color:white;text-align:center;font-family:sans-serif;}
+.box{background:#111827;margin:10px;padding:15px;border-radius:10px;}
+button,input{padding:10px;margin:5px;border-radius:8px;border:none;}
+button{background:#00ffcc;}
+#deposit{display:none;background:#000c;position:fixed;top:0;width:100%;height:100%;}
 </style>
-
 </head>
 <body>
 
-<h2>Dashboard</h2>
-
-<div class="card">
-  <p>UID: <span id="uid">Loading...</span></p>
-  <p>Balance: <span id="balance">0</span></p>
+<div class="box">
+<p>UID: <span id="uid">...</span></p>
+<p>Balance: <span id="bal">0</span></p>
 </div>
 
-<div class="card">
-  <select id="game">
-    <option>MLBB</option>
-    <option>CODM</option>
-    <option>Roblox</option>
-  </select><br>
-
-  <button onclick="generate()">🎮 Generate Account</button>
+<div class="box">
+<button onclick="openDep()">Deposit</button>
 </div>
 
-<div class="card">
-  <button onclick="showDeposit()">💳 Deposit</button>
+<div id="deposit">
+<div class="box">
+<h3>Deposit</h3>
+<input id="amount" placeholder="Amount"><br>
+<input id="refInput" placeholder="Reference"><br>
+<input type="file" id="file"><br>
+<button onclick="sendDep()">Submit</button>
+<button onclick="deposit.style.display='none'">Close</button>
 </div>
-
-<div id="depositBox">
-  <div class="card">
-    <h3>Deposit</h3>
-
-    <input id="amount" placeholder="Amount"><br>
-    <input id="refInput" placeholder="Reference"><br>
-    <input type="file" id="file"><br>
-
-    <button onclick="submitDeposit()">Submit</button>
-    <button onclick="closeDeposit()">Cancel</button>
-  </div>
 </div>
 
 <p id="msg"></p>
 
-<!-- 🔥 ONLY ONE SCRIPT -->
 <script type="module">
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, addDoc, collection }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
-  authDomain: "zhaobmfiles.firebaseapp.com",
-  projectId: "zhaobmfiles",
-  storageBucket: "zhaobmfiles.firebasestorage.app",
-  messagingSenderId: "898227903245",
-  appId: "1:898227903245:web:c21f3fa479b13c7971ae44"
+  apiKey:"AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
+  authDomain:"zhaobmfiles.firebaseapp.com",
+  projectId:"zhaobmfiles",
+  storageBucket:"zhaobmfiles.firebasestorage.app"
 };
 
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+const auth=getAuth(app);
+const db=getFirestore(app);
+const storage=getStorage(app);
 
-let currentUser;
+let user;
 
-// ✅ LOAD USER
-onAuthStateChanged(auth, async (user) => {
-  if (!user) {
-    alert("Login muna!");
-    location.href = "index.html";
-    return;
-  }
+// LOAD USER
+onAuthStateChanged(auth, async u=>{
+  if(!u){ location="index.html"; return;}
+  user=u;
 
-  currentUser = user;
-
-  const refDoc = doc(db, "users", user.uid);
-  const snap = await getDoc(refDoc);
-
-  if (snap.exists()) {
-    const data = snap.data();
-
-    uid.innerText = data.uidNum || "N/A";
-    balance.innerText = data.balance || 0;
+  const snap=await getDoc(doc(db,"users",u.uid));
+  if(snap.exists()){
+    uid.innerText=snap.data().uidNum;
+    bal.innerText=snap.data().balance;
   }
 });
 
-// 🎮 GENERATE (basic)
-window.generate = () => {
-  alert("Generate coming soon (next step)");
-};
+window.openDep=()=>deposit.style.display="block";
 
-// 💳 DEPOSIT UI
-window.showDeposit = () => {
-  depositBox.style.display = "block";
-};
+// SEND DEPOSIT
+window.sendDep=async()=>{
+  msg.innerText="Submitting...";
 
-window.closeDeposit = () => {
-  depositBox.style.display = "none";
-};
+  const fileRef=ref(storage,"receipts/"+Date.now());
+  await uploadBytes(fileRef,file.files[0]);
+  const url=await getDownloadURL(fileRef);
 
-// 💰 SUBMIT DEPOSIT (FIXED)
-window.submitDeposit = async () => {
-
-  if (!file.files[0]) {
-    msg.innerText = "Upload receipt first!";
-    return;
-  }
-
-  msg.innerText = "Submitting...";
-
-  const storageRef = ref(storage, "receipts/" + Date.now());
-  await uploadBytes(storageRef, file.files[0]);
-
-  const url = await getDownloadURL(storageRef);
-
-  await addDoc(collection(db, "deposits"), {
-    userId: currentUser.uid,
-    amount: Number(amount.value),
-    reference: refInput.value,
-    receipt: url,
-    status: "pending",
-    time: Date.now()
+  await addDoc(collection(db,"deposits"),{
+    userId:user.uid,
+    amount:Number(amount.value),
+    reference:refInput.value,
+    receipt:url,
+    status:"pending"
   });
 
-  msg.innerText = "✅ Submitted!";
-  depositBox.style.display = "none";
+  msg.innerText="✅ Submitted";
+  deposit.style.display="none";
 };
-
 </script>
-
 </body>
 </html>
