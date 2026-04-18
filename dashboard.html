@@ -33,5 +33,46 @@ button { padding:10px; margin:5px; border-radius:8px; }
 <p id="msg"></p>
 
 <script type="module" src="app.js"></script>
+  
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
+  authDomain: "zhaobmfiles.firebaseapp.com",
+  projectId: "zhaobmfiles",
+  storageBucket: "zhaobmfiles.firebasestorage.app",
+  messagingSenderId: "898227903245",
+  appId: "1:898227903245:web:c21f3fa479b13c7971ae44"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// 🔥 AUTO LOAD USER DATA
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    alert("Login muna!");
+    location.href = "index.html";
+    return;
+  }
+
+  const ref = doc(db, "users", user.uid);
+  const snap = await getDoc(ref);
+
+  if (snap.exists()) {
+    const data = snap.data();
+
+    document.getElementById("uid").innerText = data.uidNum || "N/A";
+    document.getElementById("balance").innerText = data.balance || 0;
+  } else {
+    document.getElementById("uid").innerText = "No Data";
+    document.getElementById("balance").innerText = "0";
+  }
+});
+</script>
 </body>
 </html>
