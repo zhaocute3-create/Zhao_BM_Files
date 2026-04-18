@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<body style="background:#020617;color:white;text-align:center">
+<body style="background:#020617;color:white;text-align:center;font-family:sans-serif">
 
 <h2>🎮 GENERATOR</h2>
 
@@ -11,66 +11,161 @@
 </select>
 
 <br><br>
-<button onclick="generate()">GENERATE ACCOUNT</button>
+
+<!-- 🔑 KEY INPUT -->
+<input id="userKey" placeholder="Enter Key" style="
+padding:10px;
+border-radius:10px;
+border:none;
+margin-bottom:10px;
+"><br>
+
+<button onclick="useKey()" style="
+background:#00ffcc;
+padding:10px 20px;
+border:none;
+border-radius:10px;
+box-shadow:0 0 10px #00ffcc;
+margin-bottom:15px;
+">
+USE KEY
+</button>
+
+<br>
+
+<button onclick="generate()" style="
+background:#00ff88;
+padding:10px 20px;
+border:none;
+border-radius:10px;
+box-shadow:0 0 10px #00ff88;
+">
+GENERATE ACCOUNT
+</button>
+
+<h3 id="balance">💰 Balance: 0</h3>
 
 <div id="result"></div>
 
 <script type="module">
 import { db, auth } from "./firebase.js";
+
 import {
- collection,getDocs,doc,updateDoc,addDoc
+ collection, getDocs, doc, updateDoc, addDoc, getDoc, deleteDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-window.generate=async()=>{
- let user=auth.currentUser;
- let userRef=doc(db,"users",user.uid);
- let userSnap=await getDocs(collection(db,"users"));
- let gameName=game.value;
+let currentUser = null;
 
- // GET USER BALANCE
- let uSnap=await (await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"))
- .getDoc(userRef);
+auth.onAuthStateChanged(async user=>{
+  if(!user) return location="index.html";
+  currentUser = user;
 
- let balance=uSnap.data().balance;
+  // LOAD BALANCE
+  let uRef = doc(db,"users",user.uid);
+  let snap = await getDoc(uRef);
 
- if(balance<=0) return alert("No balance!");
-
- // GET ACCOUNT
- let accSnap=await getDocs(collection(db,"accounts"));
- let chosen=null;
-
- accSnap.forEach(d=>{
-  let s=d.data();
-  if(s.game===gameName && s.status==="available" && !chosen){
-    chosen={id:d.id,...s};
+  if(!snap.exists()){
+    await addDoc(collection(db,"users"),{
+      uid:user.uid,
+      email:user.email,
+      balance:0
+    });
+  } else {
+    balance.innerText = "💰 Balance: " + snap.data().balance;
   }
- });
+});
 
- if(!chosen) return alert("No stock!");
+// 🔑 USE KEY SYSTEM
+window.useKey = async()=>{
+  let key = userKey.value.trim();
+  if(!key) return alert("Enter key!");
 
- // DEDUCT BALANCE
- await updateDoc(userRef,{
-  balance:balance-1
- });
+  let keysSnap = await getDocs(collection(db,"keys"));
+  let found = null;
 
- // MARK SOLD
- await updateDoc(doc(db,"accounts",chosen.id),{
-  status:"sold"
- });
+  keysSnap.forEach(docu=>{
+    let k = docu.data();
+    if(k.key === key){
+      found = {id:docu.id, ...k};
+    }
+  });
 
- // LOG
- await addDoc(collection(db,"logs"),{
-  user:user.email,
-  game:gameName,
-  account:chosen.username,
-  time:Date.now()
- });
+  if(!found) return alert("Invalid key!");
 
- result.innerHTML=`
- <h3>${gameName}</h3>
- USER:${chosen.username}<br>
- PASS:${chosen.password}
- `;
+  let userRef = doc(db,"users",currentUser.uid);
+  let uSnap = await getDoc(userRef);
+
+  let newBal = (uSnap.data().balance || 0) + found.coins;
+
+  await updateDoc(userRef,{
+    balance:newBal
+  });
+
+  // DELETE USED KEY
+  await deleteDoc(doc(db,"keys",found.id));
+
+  alert("Key used! +" + found.coins + " coins");
+  location.reload();
+};
+
+// 🎮 GENERATE
+window.generate = async()=>{
+  let user = currentUser;
+  if(!user) return alert("Login muna");
+
+  let userRef = doc(db,"users",user.uid);
+  let uSnap = await getDoc(userRef);
+
+  let balanceVal = uSnap.data().balance || 0;
+
+  if(balanceVal <= 0) return alert("No balance!");
+
+  let gameName = game.value;
+
+  let accSnap = await getDocs(collection(db,"accounts"));
+  let chosen = null;
+
+  accSnap.forEach(d=>{
+    let s = d.data();
+    if(s.game===gameName && s.status==="available" && !chosen){
+      chosen = {id:d.id, ...s};
+    }
+  });
+
+  if(!chosen) return alert("No stock!");
+
+  // DEDUCT BALANCE
+  await updateDoc(userRef,{
+    balance:balanceVal - 1
+  });
+
+  // MARK SOLD
+  await updateDoc(doc(db,"accounts",chosen.id),{
+    status:"sold"
+  });
+
+  // LOG
+  await addDoc(collection(db,"logs"),{
+    user:user.email,
+    game:gameName,
+    account:chosen.username,
+    time:Date.now()
+  });
+
+  balance.innerText = "💰 Balance: " + (balanceVal - 1);
+
+  result.innerHTML = `
+  <div style="
+  border:1px solid #00ff88;
+  padding:15px;
+  margin:15px;
+  border-radius:10px;
+  box-shadow:0 0 10px #00ff88;
+  ">
+    <h3>${gameName}</h3>
+    USER: ${chosen.username}<br>
+    PASS: ${chosen.password}
+  </div>`;
 };
 </script>
 
