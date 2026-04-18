@@ -56,55 +56,52 @@ auth.onAuthStateChanged(async user=>{
 
 // ✅ USE KEY FIXED
 window.useKey = async function() {
-  const keyInput = document.getElementById("keyInput").value.trim();
+window.useKey = async function() {
+  const keyVal = document.getElementById("keyInput").value.trim();
 
-  if (!keyInput) {
+  if (!keyVal) {
     alert("Enter key muna");
     return;
   }
 
-  const user = firebase.auth().currentUser;
-  if (!user) {
+  if (!currentUser) {
     alert("Login muna");
     return;
   }
 
   try {
-    const snapshot = await db.collection("keys")
-      .where("key", "==", keyInput)
-      .get();
+    const keysSnap = await getDocs(collection(db,"keys"));
 
-    if (snapshot.empty) {
+    let found = null;
+
+    for (const d of keysSnap.docs) {
+      let k = d.data();
+      if (k.key === keyVal) {
+        found = { id: d.id, ...k };
+        break;
+      }
+    }
+
+    if (!found) {
       alert("Invalid key ❌");
       return;
     }
 
-    let doc = snapshot.docs[0];
-    let data = doc.data();
+    const userRef = doc(db,"users",currentUser.uid);
+    const userSnap = await getDoc(userRef);
 
-    const coins = data.coins || 0;
+    let currentBalance = userSnap.data().balance || 0;
 
-    const userRef = db.collection("users").doc(user.uid);
-    const userDoc = await userRef.get();
+    await updateDoc(userRef,{
+      balance: currentBalance + found.coins
+    });
 
-    let currentBalance = 0;
-    if (userDoc.exists) {
-      currentBalance = userDoc.data().balance || 0;
-    }
+    await deleteDoc(doc(db,"keys",found.id));
 
-    await userRef.set({
-      balance: currentBalance + coins,
-      email: user.email
-    }, { merge: true });
+    alert("Success! +" + found.coins + " coins 💰");
 
-    await db.collection("keys").doc(doc.id).delete();
-
-    alert("Success! +" + coins + " coins 💰");
-
-    document.getElementById("balance").innerText = currentBalance + coins;
-
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error(err);
     alert("Error sa key ❌");
   }
 };
