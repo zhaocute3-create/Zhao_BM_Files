@@ -2,24 +2,86 @@
 <html>
 <head>
 <title>Login</title>
+
 <style>
-body { background:#0b1220; color:white; text-align:center; font-family:sans-serif; }
-input,button { padding:10px; margin:5px; border-radius:8px; border:none; }
-button { background:#00ffcc; }
+body {
+  background:#0b1220;
+  color:white;
+  text-align:center;
+  font-family:sans-serif;
+  padding-top:50px;
+}
+
+.container {
+  background:#111827;
+  display:inline-block;
+  padding:25px;
+  border-radius:15px;
+  box-shadow:0 0 20px #00ffcc33;
+}
+
+input {
+  padding:12px;
+  margin:8px;
+  border-radius:8px;
+  border:none;
+  width:200px;
+}
+
+button {
+  padding:12px;
+  margin:8px;
+  border-radius:8px;
+  border:none;
+  background:#00ffcc;
+  cursor:pointer;
+  width:220px;
+  font-weight:bold;
+}
+
+button:hover {
+  background:#00ddb3;
+}
+
+#msg {
+  margin-top:15px;
+  font-weight:bold;
+}
+
+.success {
+  color:#00ff88;
+}
+
+.error {
+  color:#ff4d4d;
+}
 </style>
+
 </head>
 <body>
 
-<h2>Login / Register</h2>
+<div class="container">
+  <h2>Login / Register</h2>
 
-<input id="email" placeholder="Email"><br>
-<input id="pass" type="password" placeholder="Password"><br>
+  <input id="email" placeholder="Email"><br>
+  <input id="pass" type="password" placeholder="Password"><br>
 
-<button onclick="register()">Register</button>
-<button onclick="login()">Login</button>
+  <button onclick="register()">Register</button>
+  <button onclick="login()">Login</button>
 
-<p id="msg"></p>
+  <p id="msg"></p>
+</div>
 
 <script type="module" src="app.js"></script>
+
+<script>
+/* 🔥 OPTIONAL VISUAL HELPER (para may kulay notif) */
+function showMsg(text, type="success"){
+  const m = document.getElementById("msg");
+  m.innerText = text;
+  m.className = type;
+}
+</script>
+
 </body>
 </html>
