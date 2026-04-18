@@ -43,9 +43,9 @@ window.register = async () => {
       balance: 0
     });
 
-    msg.innerText = "✅ Register Success!";
+    showMsg("✅ Register Success!", "success");
   } catch (e) {
-    msg.innerText = "❌ " + e.message;
+    showMsg("❌ " + e.message, "error");
   }
 };
 
