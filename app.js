@@ -1,104 +1,30 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+import { getAuth, createUserWithEmailAndPassword } 
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
-  authDomain: "zhaobmfiles.firebaseapp.com",
-  projectId: "zhaobmfiles",
-  storageBucket: "zhaobmfiles.firebasestorage.app",
-  messagingSenderId: "898227903245",
-  appId: "1:898227903245:web:c21f3fa479b13c7971ae44",
-  measurementId: "G-RQFGYGCEPC"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
-const db = getFirestore();
-const storage = getStorage();
+import { getFirestore, doc, setDoc } 
+from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-let currentUser;
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-onAuthStateChanged(auth, async user => {
-  if(!user) return;
+window.register = async () => {
+  const email = document.getElementById("email").value;
+  const pass = document.getElementById("password").value;
 
-  currentUser = user;
+  try {
+    const userCred = await createUserWithEmailAndPassword(auth, email, pass);
 
-  const refUser = doc(db,"users",user.uid);
-  let snap = await getDoc(refUser);
+    const user = userCred.user;
 
-  if(!snap.exists()){
-    const metaRef = doc(db,"meta","counter");
-    let meta = await getDoc(metaRef);
-
-    let uidNum = 1;
-    if(meta.exists()){
-      uidNum = meta.data().count + 1;
-    }
-
-    await setDoc(metaRef,{count:uidNum});
-    await setDoc(refUser,{
-      email:user.email,
-      uidNum:uidNum,
-      balance:0
+    // ✅ SAVE SA FIRESTORE
+    await setDoc(doc(db, "users", user.uid), {
+      email: user.email,
+      balance: 0,
+      uidNum: Date.now() // pwede mo palitan later (1,2,3 system)
     });
+
+    alert("✅ Register success");
+  } catch (e) {
+    alert("❌ " + e.message);
   }
-
-  loadData();
-});
-
-async function loadData(){
-  const refUser = doc(db,"users",currentUser.uid);
-  const snap = await getDoc(refUser);
-
-  document.getElementById("uid").innerText = snap.data().uidNum;
-  document.getElementById("bal").innerText = snap.data().balance;
-}
-
-window.register = async ()=>{
-  try{
-    await createUserWithEmailAndPassword(auth,email.value,pass.value);
-    msg.innerText="Registered!";
-  }catch(e){ msg.innerText=e.message; }
-}
-
-window.login = async ()=>{
-  try{
-    await signInWithEmailAndPassword(auth,email.value,pass.value);
-    location="dashboard.html";
-  }catch(e){ msg.innerText=e.message; }
-}
-
-window.showDeposit = ()=>{
-  depositBox.style.display="block";
-}
-
-window.submitDeposit = async ()=>{
-  msg.innerText="Submitting...";
-
-  const file = document.getElementById("file").files[0];
-  const storageRef = ref(storage,"receipts/"+Date.now());
-  await uploadBytes(storageRef,file);
-  const url = await getDownloadURL(storageRef);
-
-  await addDoc(collection(db,"deposits"),{
-    uid:currentUser.uid,
-    amount:amount.value,
-    ref:ref.value,
-    img:url,
-    status:"pending"
-  });
-
-  msg.innerText="Submitted!";
-}
-
-window.generate = async ()=>{
-  const game = document.getElementById("game").value;
-
-  const q = await getDocs(collection(db,"accounts"));
-  q.forEach(async d=>{
-    if(d.data().game==game){
-      alert(d.data().user+" / "+d.data().pass);
-    }
-  });
-                          }
+};
