@@ -2,12 +2,19 @@
 <html>
 <body style="background:#020617;color:white;text-align:center">
 
-<h2>ADMIN PANEL</h2>
+<h2>ADMIN</h2>
+
+<h3>Add Account</h3>
+<input id="game">
+<input id="user">
+<input id="pass">
+<input id="price">
+<button onclick="addAcc()">Add</button>
 
 <h3>Add Balance</h3>
-<input id="uidInput">
-<input id="amount">
-<button onclick="addBal()">ADD</button>
+<input id="uid">
+<input id="balAdd">
+<button onclick="addBal()">Add</button>
 
 <h3>Deposits</h3>
 <div id="list"></div>
@@ -15,52 +22,63 @@
 <script type="module">
 import { db, auth } from "./firebase.js";
 import {
- collection,query,where,getDocs,
+ collection,addDoc,query,where,getDocs,
  doc,updateDoc,onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const ADMIN="jhonlouiebaid92@gmail.com";
+const ADMIN="YOUR_EMAIL@gmail.com";
 
 auth.onAuthStateChanged(u=>{
-  if(!u || u.email !== ADMIN) location="index.html";
+ if(!u || u.email!==ADMIN) location="index.html";
 });
 
-window.addBal=async()=>{
-  const q=query(collection(db,"users"),where("uidNumber","==",Number(uidInput.value)));
-  const s=await getDocs(q);
+window.addAcc=async()=>{
+  await addDoc(collection(db,"accounts"),{
+    game:game.value,
+    username:user.value,
+    password:pass.value,
+    price:Number(price.value),
+    status:"available"
+  });
+  alert("Added");
+};
 
-  if(s.empty) return alert("No UID");
+window.addBal=async()=>{
+  const q=query(collection(db,"users"),
+    where("uidNumber","==",Number(uid.value)));
+
+  const s=await getDocs(q);
 
   const d=s.docs[0];
 
   await updateDoc(doc(db,"users",d.id),{
-    balance:d.data().balance+Number(amount.value)
+    balance:d.data().balance+Number(balAdd.value)
   });
 
-  alert("Added");
+  alert("Done");
 };
 
 onSnapshot(collection(db,"deposits"),snap=>{
-  let html="";
+ let html="";
 
-  snap.forEach(d=>{
-    const x=d.data();
+ snap.forEach(d=>{
+  const x=d.data();
 
-    html+=`
-    <div style="border:1px solid #00ffcc;margin:10px;padding:10px">
-      UID: ${x.user}<br>
-      ₱${x.amount}<br>
-      <img src="${x.receipt}" width="100"><br>
-      <button onclick="approve('${d.id}',${x.amount},'${x.user}')">Approve</button>
-      <button onclick="reject('${d.id}')">Reject</button>
-    </div>`;
-  });
+  html+=`
+  <div>
+    ${x.amount}<br>
+    <img src="${x.receipt}" width="100"><br>
+    <button onclick="approve('${d.id}',${x.amount},'${x.user}')">OK</button>
+  </div>`;
+ });
 
-  list.innerHTML=html;
+ list.innerHTML=html;
 });
 
 window.approve=async(id,amt,uid)=>{
-  const q=query(collection(db,"users"),where("uidNumber","==",Number(uid)));
+  const q=query(collection(db,"users"),
+    where("uidNumber","==",Number(uid)));
+
   const s=await getDocs(q);
 
   const u=s.docs[0];
@@ -74,14 +92,6 @@ window.approve=async(id,amt,uid)=>{
   });
 
   alert("Approved");
-};
-
-window.reject=async(id)=>{
-  await updateDoc(doc(db,"deposits",id),{
-    status:"rejected"
-  });
-
-  alert("Rejected");
 };
 </script>
 
