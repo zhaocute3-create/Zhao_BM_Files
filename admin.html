@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#020617;color:white">
+
+<h2>ADMIN PANEL</h2>
+
+<h3>➕ ADD ACCOUNT</h3>
+<input id="game" placeholder="MLBB/CODM/Roblox"><br>
+<input id="user"><br>
+<input id="pass"><br>
+
+<button onclick="add()">ADD</button>
+
+<h3>🔑 GENERATE KEY (coins)</h3>
+<input id="coins" placeholder="Coins"><br>
+<button onclick="genKey()">CREATE KEY</button>
+
+<h3>👤 USERS</h3>
+<div id="users"></div>
+
+<script type="module">
+import { db, auth } from "./firebase.js";
+import {
+ collection,addDoc,onSnapshot,doc,updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+const ADMIN="jhonlouiebaid92@gmail.com";
+
+onAuthStateChanged(auth,u=>{
+ if(!u || u.email!==ADMIN){
+  location="index.html";
+ }
+});
+
+// ADD ACCOUNT
+window.add=async()=>{
+ await addDoc(collection(db,"accounts"),{
+  game:game.value,
+  username:user.value,
+  password:pass.value,
+  status:"available"
+ });
+};
+
+// CREATE KEY
+window.genKey=async()=>{
+ let key=Math.random().toString(36).substring(2,10);
+
+ await addDoc(collection(db,"keys"),{
+  key:key,
+  coins:Number(coins.value),
+  used:false
+ });
+
+ alert("KEY: "+key);
+};
+
+// VIEW USERS
+onSnapshot(collection(db,"users"),snap=>{
+ let html="";
+ snap.forEach(d=>{
+  let u=d.data();
+  html+=`
+  <div>
+  ${u.email} | 💰 ${u.balance}
+  </div>`;
+ });
+ users.innerHTML=html;
+});
+</script>
+
+</body>
+</html>
