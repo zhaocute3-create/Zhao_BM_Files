@@ -11,7 +11,7 @@ const firebaseConfig = {
   measurementId: "G-RQFGYGCEPC"
 };
 
-const db = getFirestore();
+const db = getFirestore(app);
 
 window.addBal = async ()=>{
   const uid = document.getElementById("uid").value;
