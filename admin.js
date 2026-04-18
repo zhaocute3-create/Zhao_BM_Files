@@ -1,11 +1,15 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, getDocs, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-const app = initializeApp({
-  apiKey:"AIza...",
-  authDomain:"zhaobmfiles.firebaseapp.com",
-  projectId:"zhaobmfiles"
-});
+const firebaseConfig = {
+  apiKey: "AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
+  authDomain: "zhaobmfiles.firebaseapp.com",
+  projectId: "zhaobmfiles",
+  storageBucket: "zhaobmfiles.firebasestorage.app",
+  messagingSenderId: "898227903245",
+  appId: "1:898227903245:web:c21f3fa479b13c7971ae44",
+  measurementId: "G-RQFGYGCEPC"
+};
 
 const db = getFirestore();
 
