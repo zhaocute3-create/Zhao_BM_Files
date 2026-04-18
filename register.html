@@ -3,22 +3,45 @@
 <body style="background:#020617;color:white;text-align:center">
 
 <h2>REGISTER</h2>
-<input id="email" placeholder="Email"><br>
-<input id="pass" type="password" placeholder="Password"><br>
+<input id="email"><br>
+<input id="pass" type="password"><br>
 <button onclick="reg()">REGISTER</button>
 
 <script type="module">
-import { auth } from "./firebase.js";
+import { auth, db } from "./firebase.js";
 import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, setDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+async function genUID(){
+  const ref = doc(db,"system","counter");
+
+  return await runTransaction(db, async t=>{
+    const s = await t.get(ref);
+    let uid = 1;
+
+    if(s.exists()){
+      uid = (s.data().uid || 0) + 1;
+      t.update(ref,{uid});
+    }else{
+      t.set(ref,{uid:1});
+    }
+
+    return uid;
+  });
+}
 
 window.reg = async ()=>{
-  try{
-    await createUserWithEmailAndPassword(auth,email.value,pass.value);
-    alert("Registered!");
-    location="index.html";
-  }catch(e){
-    alert("Error ❌");
-  }
+  const res = await createUserWithEmailAndPassword(auth,email.value,pass.value);
+  const uid = await genUID();
+
+  await setDoc(doc(db,"users",res.user.uid),{
+    uidNumber: uid,
+    balance: 0,
+    created: Date.now()
+  });
+
+  alert("Your UID: "+uid);
+  location="index.html";
 };
 </script>
 
