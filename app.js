@@ -4,12 +4,14 @@ import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, getDocs, addD
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
-  apiKey: "AIza...",
+  apiKey: "AIzaSyAyxbJtIGOfiU5_h8BRKsXyK4RC_wIET3s",
   authDomain: "zhaobmfiles.firebaseapp.com",
   projectId: "zhaobmfiles",
   storageBucket: "zhaobmfiles.firebasestorage.app",
+  messagingSenderId: "898227903245",
+  appId: "1:898227903245:web:c21f3fa479b13c7971ae44",
+  measurementId: "G-RQFGYGCEPC"
 };
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth();
 const db = getFirestore();
