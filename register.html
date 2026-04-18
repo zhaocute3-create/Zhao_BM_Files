@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<body style="background:#020617;color:white;text-align:center">
+
+<h2>REGISTER</h2>
+
+<input id="email"><br>
+<input id="pass" type="password"><br>
+
+<button onclick="reg()">CREATE</button>
+
+<script type="module">
+import { auth, db } from "./firebase.js";
+import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+window.reg=()=>{
+ createUserWithEmailAndPassword(auth,email.value,pass.value)
+ .then(async(res)=>{
+   await setDoc(doc(db,"users",res.user.uid),{
+     email:res.user.email,
+     balance:0,
+     created:Date.now()
+   });
+   location="index.html";
+ });
+}
+</script>
+
+</body>
+</html>
